@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Do i care ? No</title>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+    }
+
+    body {
+      display: grid;
+      place-items: center;
+      background:
+        linear-gradient(rgba(0,0,0,.20), rgba(0,0,0,.30)),
+        url("./background.jpg") center center / cover no-repeat;
+    }
+
+    /* Main message */
+    #text {
+      position: relative;
+      z-index: 2;
+      color: white;
+      font-size: clamp(2.2rem, 8vw, 7rem);
+      font-weight: 800;
+      line-height: 1;
+      text-align: center;
+      letter-spacing: -0.04em;
+      white-space: nowrap;
+      user-select: none;
+      transform: translateZ(0);
+
+      /* Strong text + background shadow/glow */
+      text-shadow:
+        0 4px 8px rgba(0,0,0,1),
+        0 8px 25px rgba(0,0,0,.95),
+        0 0 35px rgba(0,0,0,.85);
+      filter: drop-shadow(0 10px 20px rgba(0,0,0,.75));
+    }
+
+    /* Bottom-left signature */
+    #handle {
+      position: fixed;
+      left: 22px;
+      bottom: 18px;
+      z-index: 5;
+      color: white;
+      font-size: clamp(1rem, 2.5vw, 1.5rem);
+      font-weight: 700;
+      letter-spacing: .02em;
+      text-shadow:
+        0 3px 8px rgba(0,0,0,1),
+        0 0 15px rgba(0,0,0,.9);
+      user-select: none;
+    }
+
+    /* Bottom-right information panel */
+    #info {
+      position: fixed;
+      right: 18px;
+      bottom: 16px;
+      z-index: 5;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 7px;
+      color: white;
+      font-family: Arial, sans-serif;
+      user-select: none;
+    }
+
+    #clock {
+      font-size: clamp(.82rem, 2vw, 1rem);
+      font-weight: 600;
+      text-shadow: 0 2px 8px rgba(0,0,0,1);
+      text-align: right;
+    }
+
+    #views {
+      appearance: none;
+      border: 1px solid rgba(255,255,255,.28);
+      border-radius: 999px;
+      padding: 8px 14px;
+      color: white;
+      background: rgba(0,0,0,.22);
+      backdrop-filter: blur(7px);
+      -webkit-backdrop-filter: blur(7px);
+      font-size: .82rem;
+      font-weight: 600;
+      box-shadow:
+        0 4px 18px rgba(0,0,0,.45),
+        inset 0 0 12px rgba(255,255,255,.04);
+    }
+
+    @media (max-width: 600px) {
+      #handle { left: 14px; bottom: 13px; }
+      #info { right: 12px; bottom: 12px; }
+      #text { max-width: 94vw; white-space: normal; }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="text">Do i care ? No</div>
+
+  <div id="handle">~@SUBHxD</div>
+
+  <div id="info">
+    <div id="clock">Loading...</div>
+    <div id="views">Views: ...</div>
+  </div>
+
+  <script>
+    /* 30+ font options. The browser uses the first installed font in each family. */
+    const fonts = [
+      "Arial Black", "Impact", "Trebuchet MS", "Verdana", "Georgia",
+      "Times New Roman", "Courier New", "Arial", "Helvetica", "Tahoma",
+      "Garamond", "Palatino Linotype", "Book Antiqua", "Lucida Console",
+      "Lucida Sans Unicode", "Century Gothic", "Franklin Gothic Medium",
+      "Gill Sans", "Segoe UI", "Calibri", "Cambria", "Consolas",
+      "Constantia", "Corbel", "Candara", "Baskerville", "Didot",
+      "Rockwell", "Copperplate", "Optima", "Futura", "Monaco",
+      "Menlo", "system-ui", "monospace", "serif", "sans-serif"
+    ];
+
+    const text = document.getElementById("text");
+    const clock = document.getElementById("clock");
+    const views = document.getElementById("views");
+
+    let fontIndex = 0;
+
+    // Extremely fast font switching.
+    setInterval(() => {
+      text.style.fontFamily = fonts[fontIndex++ % fonts.length];
+    }, 45);
+
+    // Live current date + time.
+    function updateClock() {
+      const now = new Date();
+      const date = now.toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric"
+      });
+      const time = now.toLocaleTimeString("en-IN", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true
+      });
+      clock.textContent = `${date} • ${time}`;
+    }
+
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    /*
+      Global view counter using CounterAPI.
+      If the service is unavailable, a local fallback counter is shown.
+    */
+    async function updateViews() {
+      const fallbackKey = "do_i_care_local_views";
+      const localCount = Number(localStorage.getItem(fallbackKey) || 0) + 1;
+      localStorage.setItem(fallbackKey, localCount);
+      views.textContent = `Views: ${localCount.toLocaleString()}`;
+
+      try {
+        const response = await fetch(
+          "https://api.counterapi.dev/v1/do-i-care-no/views/up",
+          { cache: "no-store" }
+        );
+
+        if (!response.ok) throw new Error("Counter unavailable");
+
+        const data = await response.json();
+        if (typeof data.count === "number") {
+          views.textContent = `Views: ${data.count.toLocaleString()}`;
+        }
+      } catch (error) {
+        // Keep the local fallback if the public counter is unavailable.
+      }
+    }
+
+    updateViews();
+  </script>
+</body>
+</html>
